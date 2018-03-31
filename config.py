@@ -31,8 +31,8 @@ if 1:
 
     # Dataset selection.
 
-    run_desc += '-celebahq';   dataset = dict(tfrecord_dir='celebahq'); train.update(mirror_augment=True)
-    #run_desc += '-celeba';     dataset = dict(tfrecord_dir='celeba'); train.update(mirror_augment=True)
+    #run_desc += '-celebahq';   dataset = dict(tfrecord_dir='celebahq'); train.update(mirror_augment=True)
+    run_desc += '-celeba';     dataset = dict(tfrecord_dir='/home/data/img_celeba'); train.update(mirror_augment=True)
     #run_desc += '-cifar10';    dataset = dict(tfrecord_dir='cifar10')
     #run_desc += '-cifar100';   dataset = dict(tfrecord_dir='cifar100')
     #run_desc += '-svhn';       dataset = dict(tfrecord_dir='svhn')
@@ -81,7 +81,7 @@ if 1:
     # Numerical precision & memory usage.
 
     #run_desc += '-fp32'; train.update(minibatch_limits={8:208, 16:132, 32:88, 64:48, 128:32, 256:16, 512:8, 1024:4})
-    run_desc += '-fp16'; G.update(dtype='float16'); D.update(dtype='float16'); G_opt.update(use_loss_scaling=True); D_opt.update(use_loss_scaling=True); train.update(minibatch_limits={8:240, 16:240, 32:156, 64:100, 128:56, 256:32, 512:16, 1024:8})
+    run_desc += '-fp16'; G.update(dtype='float16'); D.update(dtype='float16'); G_opt.update(use_loss_scaling=True); D_opt.update(use_loss_scaling=True); train.update(minibatch_limits={8:240, 16:240, 32:156, 64:100, 128:56, 256:32})
 
     # Individual parameters.
 
@@ -133,7 +133,7 @@ if 1:
 # Utility scripts.
 # To run, uncomment the appropriate line and launch train.py.
 
-#train = dict(func='scripts.generate_fake_images', run_id=100, num_pngs=1000); run_desc = 'fake-images-' + str(train['run_id'])
+#train = dict(func='scripts.generate_fake_images', run_id="karras2018iclr-celebahq-1024x1024.pkl", num_pngs=1000); run_desc = 'fake-images-' + str(train['run_id'])
 #train = dict(func='scripts.generate_fake_images', run_id=100, grid_size=[15,8], num_pngs=10, image_shrink=4); run_desc = 'fake-grids-' + str(train['run_id'])
 #train = dict(func='scripts.generate_interpolation_video', run_id=100, grid_size=[1,1], duration_sec=60.0, smoothing_sec=1.0); run_desc = 'interpolation-video-' + str(train['run_id'])
 #train = dict(func='scripts.generate_training_video', run_id=100, duration_sec=20.0); run_desc = 'training-video-' + str(train['run_id'])
