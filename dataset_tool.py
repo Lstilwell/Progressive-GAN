@@ -1,5 +1,5 @@
 # Copyright (c) 2018, NVIDIA CORPORATION. All rights reserved.
-#
+
 # This work is licensed under the Creative Commons Attribution-NonCommercial
 # 4.0 International License. To view a copy of this license, visit
 # http://creativecommons.org/licenses/by-nc/4.0/ or send a letter to
@@ -26,7 +26,6 @@ def error(msg):
     exit(1)
 
 #----------------------------------------------------------------------------
-
 class TFRecordExporter:
     def __init__(self, tfrecord_dir, expected_images, print_progress=True, progress_interval=10):
         self.tfrecord_dir       = tfrecord_dir
@@ -434,16 +433,19 @@ def create_lsun(tfrecord_dir, lmdb_dir, resolution=256, max_images=None):
 
 def create_celeba(tfrecord_dir, celeba_dir, cx=89, cy=121):
     print('Loading CelebA from "%s"' % celeba_dir)
-    glob_pattern = os.path.join(celeba_dir, 'img_align_celeba_png', '*.png')
+    glob_pattern = os.path.join(celeba_dir, '*.jpg')
     image_filenames = sorted(glob.glob(glob_pattern))
     expected_images = 202599
     if len(image_filenames) != expected_images:
+        print(len(image_filenames))
         error('Expected to find %d images' % expected_images)
+	
     
     with TFRecordExporter(tfrecord_dir, len(image_filenames)) as tfr:
         order = tfr.choose_shuffled_order()
         for idx in range(order.size):
             img = np.asarray(PIL.Image.open(image_filenames[order[idx]]))
+            print(img.shape)
             assert img.shape == (218, 178, 3)
             img = img[cy - 64 : cy + 64, cx - 64 : cx + 64]
             img = img.transpose(2, 0, 1) # HWC => CHW
@@ -454,7 +456,7 @@ def create_celeba(tfrecord_dir, celeba_dir, cx=89, cy=121):
 def create_celebahq(tfrecord_dir, celeba_dir, delta_dir, num_threads=4, num_tasks=100):
     print('Loading CelebA from "%s"' % celeba_dir)
     expected_images = 202599
-    if len(glob.glob(os.path.join(celeba_dir, 'img_celeba', '*.jpg'))) != expected_images:
+    if len(glob.glob(os.path.join(celeba_dir, '*.jpg'))) != expected_images:
         error('Expected to find %d images' % expected_images)
     with open(os.path.join(celeba_dir, 'Anno', 'list_landmarks_celeba.txt'), 'rt') as file:
         landmarks = [[float(value) for value in line.split()[1:]] for line in file.readlines()[2:]]
@@ -482,7 +484,7 @@ def create_celebahq(tfrecord_dir, celeba_dir, delta_dir, num_threads=4, num_task
     indices = np.array(fields['idx'])
 
     # Must use pillow version 3.1.1 for everything to work correctly.
-    if getattr(PIL, 'PILLOW_VERSION', '') != '3.1.1':
+    if getattr(PIL, 'PILLOW_VERSION', '') != '3.1.2':
         error('create_celebahq requires pillow version 3.1.1') # conda install pillow=3.1.1
         
     # Must use libjpeg version 8d for everything to work correctly.
