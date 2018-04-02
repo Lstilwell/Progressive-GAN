@@ -8,8 +8,8 @@
 #----------------------------------------------------------------------------
 # Paths.
 
-data_dir = 'datasets'
-result_dir = 'results'
+data_dir = '/home/data/records/'
+result_dir = '/home/data/results'
 
 #----------------------------------------------------------------------------
 # Baseline training config.
@@ -32,7 +32,7 @@ if 1:
     # Dataset selection.
 
     #run_desc += '-celebahq';   dataset = dict(tfrecord_dir='celebahq'); train.update(mirror_augment=True)
-    run_desc += '-celeba';     dataset = dict(tfrecord_dir='/home/data/img_celeba'); train.update(mirror_augment=True)
+    run_desc += '-celeba';     dataset = dict(tfrecord_dir='/home/data/records'); train.update(mirror_augment=True)
     #run_desc += '-cifar10';    dataset = dict(tfrecord_dir='cifar10')
     #run_desc += '-cifar100';   dataset = dict(tfrecord_dir='cifar100')
     #run_desc += '-svhn';       dataset = dict(tfrecord_dir='svhn')
