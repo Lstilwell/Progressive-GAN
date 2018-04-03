@@ -484,8 +484,8 @@ def create_celebahq(tfrecord_dir, celeba_dir, delta_dir, num_threads=4, num_task
     indices = np.array(fields['idx'])
 
     # Must use pillow version 3.1.1 for everything to work correctly.
-    if getattr(PIL, 'PILLOW_VERSION', '') != '5.0.0':
-        error('create_celebahq requires pillow version 3.1.1') # conda install pillow=3.1.1
+    #if getattr(PIL, 'PILLOW_VERSION', '') != '5.0.0':
+    #    error('create_celebahq requires pillow version 3.1.1') # conda install pillow=3.1.1
         
     # Must use libjpeg version 8d for everything to work correctly.
     img = np.array(PIL.Image.open(os.path.join(celeba_dir, '000001.jpg')))
@@ -579,10 +579,20 @@ def create_celebahq(tfrecord_dir, celeba_dir, delta_dir, num_threads=4, num_task
         kdf = cryptography.hazmat.primitives.kdf.pbkdf2.PBKDF2HMAC(algorithm=algorithm, length=32, salt=salt, iterations=100000, backend=backend)
         key = base64.urlsafe_b64encode(kdf.derive(orig_bytes))
         delta = np.frombuffer(bz2.decompress(cryptography.fernet.Fernet(key).decrypt(delta_bytes)), dtype=np.uint8).reshape(3, 1024, 1024)
-        
+         
         # Apply delta image.
         img = img + delta
+        #print(img.shape)
+        img = np.rollaxis(img,0,3)
+        img = PIL.Image.fromarray(img)
+        #print(img.size)
         
+        img = img.resize((256,256))
+        img = np.asarray(img).transpose(2,0,1) 
+        #print(img.shape)
+        #img = np.reshape(3,256,256)
+        #print(img.shape)
+        #input()
         # Verify MD5.
         md5 = hashlib.md5()
         md5.update(img.tobytes())
