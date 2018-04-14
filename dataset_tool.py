@@ -1,5 +1,5 @@
 # Copyright (c) 2018, NVIDIA CORPORATION. All rights reserved.
-
+#
 # This work is licensed under the Creative Commons Attribution-NonCommercial
 # 4.0 International License. To view a copy of this license, visit
 # http://creativecommons.org/licenses/by-nc/4.0/ or send a letter to
@@ -26,6 +26,7 @@ def error(msg):
     exit(1)
 
 #----------------------------------------------------------------------------
+
 class TFRecordExporter:
     def __init__(self, tfrecord_dir, expected_images, print_progress=True, progress_interval=10):
         self.tfrecord_dir       = tfrecord_dir
@@ -188,7 +189,7 @@ class ThreadPool(object):
 def display(tfrecord_dir):
     print('Loading dataset "%s"' % tfrecord_dir)
     tfutil.init_tf({'gpu_options.allow_growth': True})
-    dset = dataset.TFRecordDataset(tfrecord_dir, max_label_size='full', repeat=False, shuffle_items=0)
+    dset = dataset.TFRecordDataset(tfrecord_dir, max_label_size='full', repeat=False, shuffle_mb=0)
     tfutil.init_uninited_vars()
     
     idx = 0
@@ -214,7 +215,7 @@ def display(tfrecord_dir):
 def extract(tfrecord_dir, output_dir):
     print('Loading dataset "%s"' % tfrecord_dir)
     tfutil.init_tf({'gpu_options.allow_growth': True})
-    dset = dataset.TFRecordDataset(tfrecord_dir, max_label_size=0, repeat=False, shuffle_items=0)
+    dset = dataset.TFRecordDataset(tfrecord_dir, max_label_size=0, repeat=False, shuffle_mb=0)
     tfutil.init_uninited_vars()
     
     print('Extracting images to "%s"' % output_dir)
@@ -242,9 +243,9 @@ def compare(tfrecord_dir_a, tfrecord_dir_b, ignore_labels):
     max_label_size = 0 if ignore_labels else 'full'
     print('Loading dataset "%s"' % tfrecord_dir_a)
     tfutil.init_tf({'gpu_options.allow_growth': True})
-    dset_a = dataset.TFRecordDataset(tfrecord_dir_a, max_label_size=max_label_size, repeat=False, shuffle_items=0)
+    dset_a = dataset.TFRecordDataset(tfrecord_dir_a, max_label_size=max_label_size, repeat=False, shuffle_mb=0)
     print('Loading dataset "%s"' % tfrecord_dir_b)
-    dset_b = dataset.TFRecordDataset(tfrecord_dir_b, max_label_size=max_label_size, repeat=False, shuffle_items=0)
+    dset_b = dataset.TFRecordDataset(tfrecord_dir_b, max_label_size=max_label_size, repeat=False, shuffle_mb=0)
     tfutil.init_uninited_vars()
     
     print('Comparing datasets')
@@ -433,19 +434,16 @@ def create_lsun(tfrecord_dir, lmdb_dir, resolution=256, max_images=None):
 
 def create_celeba(tfrecord_dir, celeba_dir, cx=89, cy=121):
     print('Loading CelebA from "%s"' % celeba_dir)
-    glob_pattern = os.path.join(celeba_dir, '*.jpg')
+    glob_pattern = os.path.join(celeba_dir, 'img_align_celeba_png', '*.png')
     image_filenames = sorted(glob.glob(glob_pattern))
     expected_images = 202599
     if len(image_filenames) != expected_images:
-        print(len(image_filenames))
         error('Expected to find %d images' % expected_images)
-	
     
     with TFRecordExporter(tfrecord_dir, len(image_filenames)) as tfr:
         order = tfr.choose_shuffled_order()
         for idx in range(order.size):
             img = np.asarray(PIL.Image.open(image_filenames[order[idx]]))
-            print(img.shape)
             assert img.shape == (218, 178, 3)
             img = img[cy - 64 : cy + 64, cx - 64 : cx + 64]
             img = img.transpose(2, 0, 1) # HWC => CHW
@@ -456,7 +454,7 @@ def create_celeba(tfrecord_dir, celeba_dir, cx=89, cy=121):
 def create_celebahq(tfrecord_dir, celeba_dir, delta_dir, num_threads=4, num_tasks=100):
     print('Loading CelebA from "%s"' % celeba_dir)
     expected_images = 202599
-    if len(glob.glob(os.path.join(celeba_dir, '*.jpg'))) != expected_images:
+    if len(glob.glob(os.path.join(celeba_dir, 'img_celeba', '*.jpg'))) != expected_images:
         error('Expected to find %d images' % expected_images)
     with open(os.path.join(celeba_dir, 'Anno', 'list_landmarks_celeba.txt'), 'rt') as file:
         landmarks = [[float(value) for value in line.split()[1:]] for line in file.readlines()[2:]]
@@ -484,15 +482,15 @@ def create_celebahq(tfrecord_dir, celeba_dir, delta_dir, num_threads=4, num_task
     indices = np.array(fields['idx'])
 
     # Must use pillow version 3.1.1 for everything to work correctly.
-    #if getattr(PIL, 'PILLOW_VERSION', '') != '5.0.0':
-    #    error('create_celebahq requires pillow version 3.1.1') # conda install pillow=3.1.1
+    if getattr(PIL, 'PILLOW_VERSION', '') != '3.1.1':
+        error('create_celebahq requires pillow version 3.1.1') # conda install pillow=3.1.1
         
     # Must use libjpeg version 8d for everything to work correctly.
-    img = np.array(PIL.Image.open(os.path.join(celeba_dir, '000001.jpg')))
+    img = np.array(PIL.Image.open(os.path.join(celeba_dir, 'img_celeba', '000001.jpg')))
     md5 = hashlib.md5()
     md5.update(img.tobytes())
-    # if md5.hexdigest() != '9cad8178d6cb0196b36f7b34bc5eb6d3':
-    #    error('create_celebahq requires libjpeg version 8d') # conda install jpeg=8d
+    if md5.hexdigest() != '9cad8178d6cb0196b36f7b34bc5eb6d3':
+        error('create_celebahq requires libjpeg version 8d') # conda install jpeg=8d
 
     def rot90(v):
         return np.array([-v[1], v[0]])
@@ -501,7 +499,7 @@ def create_celebahq(tfrecord_dir, celeba_dir, delta_dir, num_threads=4, num_task
         # Load original image.
         orig_idx = fields['orig_idx'][idx]
         orig_file = fields['orig_file'][idx]
-        orig_path = os.path.join(celeba_dir, orig_file)
+        orig_path = os.path.join(celeba_dir, 'img_celeba', orig_file)
         img = PIL.Image.open(orig_path)
 
         # Choose oriented crop rectangle.
@@ -564,7 +562,7 @@ def create_celebahq(tfrecord_dir, celeba_dir, delta_dir, num_threads=4, num_task
         # Verify MD5.
         md5 = hashlib.md5()
         md5.update(img.tobytes())
-        #assert md5.hexdigest() == fields['proc_md5'][idx]
+        assert md5.hexdigest() == fields['proc_md5'][idx]
         
         # Load delta image and original JPG.
         with zipfile.ZipFile(os.path.join(delta_dir, 'deltas%05d.zip' % (idx - idx % 1000)), 'r') as zip:
@@ -579,24 +577,14 @@ def create_celebahq(tfrecord_dir, celeba_dir, delta_dir, num_threads=4, num_task
         kdf = cryptography.hazmat.primitives.kdf.pbkdf2.PBKDF2HMAC(algorithm=algorithm, length=32, salt=salt, iterations=100000, backend=backend)
         key = base64.urlsafe_b64encode(kdf.derive(orig_bytes))
         delta = np.frombuffer(bz2.decompress(cryptography.fernet.Fernet(key).decrypt(delta_bytes)), dtype=np.uint8).reshape(3, 1024, 1024)
-         
+        
         # Apply delta image.
         img = img + delta
-        #print(img.shape)
-        img = np.rollaxis(img,0,3)
-        img = PIL.Image.fromarray(img)
-        #print(img.size)
         
-        img = img.resize((256,256))
-        img = np.asarray(img).transpose(2,0,1) 
-        #print(img.shape)
-        #img = np.reshape(3,256,256)
-        #print(img.shape)
-        #input()
         # Verify MD5.
         md5 = hashlib.md5()
         md5.update(img.tobytes())
-        #assert md5.hexdigest() == fields['final_md5'][idx]
+        assert md5.hexdigest() == fields['final_md5'][idx]
         return img
 
     with TFRecordExporter(tfrecord_dir, indices.size) as tfr:
