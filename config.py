@@ -19,7 +19,7 @@ class EasyDict(dict):
 # Paths.
 
 data_dir = '/home/data/records_128/'
-result_dir = '/home/data/results_128'
+result_dir = '/home/data/results_128/res_net'
 
 #----------------------------------------------------------------------------
 # TensorFlow options.
