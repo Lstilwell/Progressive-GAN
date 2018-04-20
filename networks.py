@@ -188,15 +188,15 @@ def G_paper(
                     x = PN(act(apply_bias(conv2d(x, fmaps=nf(res-1), kernel=3, use_wscale=use_wscale))))
 		    
             else: # 8x8 and up
-                x_input = upscale2d(x)
-                if fused_scale:
+                if fused_scale: 
                     with tf.variable_scope('Conv0_up'):
-                        x = PN(act(apply_bias(upscale2d_conv2d(x, fmaps=nf(res-1), kernel=3, use_wscale=use_wscale))))
-                else:
-                    x = upscale2d(x)
+                        x = PN(act(apply_bias(upscale2d_conv2d(x, fmaps=nf(res-1), kernel=3, use_wscale=use_wscale)))) 
+                else: 
                     with tf.variable_scope('Conv0'):
                         x = PN(act(apply_bias(conv2d(x, fmaps=nf(res-1), kernel=3, use_wscale=use_wscale))))
-                with tf.variable_scope('Conv1'):
+                with tf.variable_scope('Conv1'): 
+                    x_input = x
+                    x = PN(act(apply_bias(conv2d(x, fmaps=nf(res-1), kernel=3, use_wscale=use_wscale))))
                     x = PN(act(apply_bias(conv2d(x, fmaps=nf(res-1), kernel=3, use_wscale=use_wscale))))
                     x = tf.add(x, x_input)
             return x
