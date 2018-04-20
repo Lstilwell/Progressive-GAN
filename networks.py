@@ -197,8 +197,9 @@ def G_paper(
                 with tf.variable_scope('Conv1'): 
                     x_input = x
                     x = PN(act(apply_bias(conv2d(x, fmaps=nf(res-1), kernel=3, use_wscale=use_wscale))))
+                with tf.variable)scope("Conv2"):
                     x = PN(act(apply_bias(conv2d(x, fmaps=nf(res-1), kernel=3, use_wscale=use_wscale))))
-                    x = tf.add(x, x_input)
+                x = tf.add(x, x_input)
             return x
     def torgb(x, res): # res = 2..resolution_log2
         lod = resolution_log2 - res
