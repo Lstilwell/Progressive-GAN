@@ -130,12 +130,17 @@ def minibatch_stddev_layer(x, group_size=4):
         s = x.shape                                             # [NCHW]  Input shape.
         y = tf.reshape(x, [group_size, -1, s[1], s[2], s[3]])   # [GMCHW] Split minibatch into M groups of size G.
         y = tf.cast(y, tf.float32)                              # [GMCHW] Cast to FP32.
+        mean = tf.reduce_mean(y, axis=0, keepdims=True)         # Calculate mean
+        mean = tf.reduce_mean(mean, axis=[1,2,3], keepdims=True)
         y -= tf.reduce_mean(y, axis=0, keepdims=True)           # [GMCHW] Subtract mean over group.
         y = tf.reduce_mean(tf.square(y), axis=0)                # [MCHW]  Calc variance over group.
         y = tf.sqrt(y + 1e-8)                                   # [MCHW]  Calc stddev over group.
         y = tf.reduce_mean(y, axis=[1,2,3], keepdims=True)      # [M111]  Take average over fmaps and pixels.
         y = tf.cast(y, x.dtype)                                 # [M111]  Cast back to original data type.
         y = tf.tile(y, [group_size, 1, s[2], s[3]])             # [N1HW]  Replicate over group and pixels.
+        mean = tf.cast(mean, x.dtype)
+        mean = tf.tile(mean, [group_size, 1, s[2], s[3]])
+        y = tf.concat([y, mean], axis=1)
         return tf.concat([x, y], axis=1)                        # [NCHW]  Append as new fmap.
 
 #----------------------------------------------------------------------------
@@ -195,7 +200,9 @@ def G_paper(
                     with tf.variable_scope('Conv0'):
                         x = PN(act(apply_bias(conv2d(x, fmaps=nf(res-1), kernel=3, use_wscale=use_wscale))))
                 with tf.variable_scope('Conv1'): 
-                    x = PN(act(apply_bias(conv2d(x, fmaps=nf(res-1), kernel=3, use_wscale=use_wscale)))) 
+                    x = PN(act(apply_bias(conv2d(x, fmaps=nf(res-1), kernel=3, use_wscale=use_wscale))))
+                with tf.variable_scope('Conv2'): 
+                    x = PN(act(apply_bias(conv2d(x, fmaps=nf(res-1), kernel=3, use_wscale=use_wscale))))  
             return x
     def torgb(x, res): # res = 2..resolution_log2
         lod = resolution_log2 - res
@@ -269,7 +276,7 @@ def D_paper(
                     x = act(apply_bias(conv2d(x, fmaps=nf(res-1), kernel=3, use_wscale=use_wscale)))
                 with tf.variable_scope("Conv1"):
                     x = act(apply_bias(conv2d(x, fmaps=nf(res-1), kernel=3, use_wscale=use_wscale)))
-                x = tf.add([x_input, x])
+                
                 if fused_scale:
                     with tf.variable_scope('Conv2_down'):
                         x = act(apply_bias(conv2d_downscale2d(x, fmaps=nf(res-2), kernel=3, use_wscale=use_wscale)))
