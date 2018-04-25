@@ -88,7 +88,7 @@ def upscale2d_conv2d(x, fmaps, kernel, gain=np.sqrt(2), use_wscale=False):
     w = get_weight([kernel, kernel, fmaps, x.shape[1].value], gain=gain, use_wscale=use_wscale, fan_in=(kernel**2)*x.shape[1].value)
     w = tf.pad(w, [[1,1], [1,1], [0,0], [0,0]], mode='CONSTANT')
     w = tf.add_n([w[1:, 1:], w[:-1, 1:], w[1:, :-1], w[:-1, :-1]])
-    w = tf.cast(w, x.dtype)
+    w = tf.cast(w, x.dtype,name="filter")
     os = [tf.shape(x)[0], fmaps, x.shape[2] * 2, x.shape[3] * 2]
     return tf.nn.conv2d_transpose(x, w, os, strides=[1,1,2,2], padding='SAME', data_format='NCHW')
 
@@ -269,7 +269,7 @@ def D_paper(
                     x = act(apply_bias(conv2d(x, fmaps=nf(res-1), kernel=3, use_wscale=use_wscale)))
                 with tf.variable_scope("Conv1"):
                     x = act(apply_bias(conv2d(x, fmaps=nf(res-1), kernel=3, use_wscale=use_wscale)))
-                x = tf.add([x_input, x])
+                #x = tf.add([x_input, x])
                 if fused_scale:
                     with tf.variable_scope('Conv2_down'):
                         x = act(apply_bias(conv2d_downscale2d(x, fmaps=nf(res-2), kernel=3, use_wscale=use_wscale)))
