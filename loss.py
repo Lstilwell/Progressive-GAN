@@ -20,17 +20,36 @@ def fp32(*values):
     return values if len(values) >= 2 else values[0]
 
 #----------------------------------------------------------------------------
-# Generator loss function used in the paper (WGAN + AC-GAN).
+def extract(latents, index):
+    return tf.gather_nd(latents, [[index]])
 
-def G_wgan_acgan(G, D, opt, training_set, minibatch_size,
+def body2(i, j, size, latents, result):
+     if i != j:
+        vec_one = extract(latents, i)
+        vec_two = extract(latents, j)
+        result = tf.add(result, tf.square(tf.div(tf.matmul(vec_one, tf.transpose(vec_two)), tf.multiply(tf.norm(vec_one), tf.norm(vec_two)))))
+        return [i, j, size, latents, result]
+
+def body1(i, size, latents, result):
+    j = tf.constant(0)
+    condition2 = lambda i, j, size, latents, result: tf.less(j, size)
+    tf.while_loop(condition2, body2, [i, j, size, latents, result])
+    return [i, size, latents, result]
+
+def G_wgan_acgan(G, D, opt, training_set, minibatch_size, 
     cond_weight = 1.0): # Weight of the conditioning term.
-
-    latents = tf.random_normal([minibatch_size] + G.input_shapes[0][1:])
+    latents = tf.random_normal([minibatch_size] + G.input_shapes[0][1:]) 
     labels = training_set.get_random_labels_tf(minibatch_size)
     fake_images_out = G.get_output_for(latents, labels, is_training=True)
     fake_scores_out, fake_labels_out = fp32(D.get_output_for(fake_images_out, is_training=True))
-    loss = -fake_scores_out
-
+    size = tf.shape(latents)[0]
+    i = tf.constant(0) 
+    result = tf.constant(0.0, shape=(1,1))
+    condition1 = lambda i, size, latents, result : tf.less(i, size)     
+    _, _, _, res_final = tf.while_loop(condition1, body1, [i, size, latents, result])
+    size_f32 = tf.cast(size, tf.float32)
+    res_final = tf.div(res_final, (tf.multiply(size_f32, tf.add(size_f32, tf.constant(-1.0)))))
+    loss = -fake_scores_out + res_final
     if D.output_shapes[1][1] > 0:
         with tf.name_scope('LabelPenalty'):
             label_penalty_fakes = tf.nn.softmax_cross_entropy_with_logits_v2(labels=labels, logits=fake_labels_out)

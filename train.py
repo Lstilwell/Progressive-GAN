@@ -276,6 +276,7 @@ def train_progressive_gan(
 # Calls the function indicated in config.py.
 
 if __name__ == "__main__":
+    tf.reset_default_graph()
     misc.init_output_logging()
     np.random.seed(config.random_seed)
     print('Initializing TensorFlow...')
