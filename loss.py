@@ -28,13 +28,13 @@ def body2(i, j, size, latents, result):
         vec_one = extract(latents, i)
         vec_two = extract(latents, j)
         result = tf.add(result, tf.square(tf.div(tf.matmul(vec_one, tf.transpose(vec_two)), tf.multiply(tf.norm(vec_one), tf.norm(vec_two)))))
-        return [i, j, size, latents, result]
+        return [i, j+1, size, latents, result]
 
 def body1(i, size, latents, result):
     j = tf.constant(0)
     condition2 = lambda i, j, size, latents, result: tf.less(j, size)
     tf.while_loop(condition2, body2, [i, j, size, latents, result])
-    return [i, size, latents, result]
+    return [i+1, size, latents, result]
 
 def G_wgan_acgan(G, D, opt, training_set, minibatch_size, 
     cond_weight = 1.0): # Weight of the conditioning term.

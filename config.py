@@ -19,7 +19,7 @@ class EasyDict(dict):
 # Paths.
 
 data_dir = '/home/data/records_128/'
-result_dir = '/home/data/results_128/conv2/'
+result_dir = '/home/data/results_128/repelling_regularizer_resnetDG/'
 
 #----------------------------------------------------------------------------
 # TensorFlow options.
@@ -126,12 +126,12 @@ desc += '-fp32'; sched.max_minibatch_per_gpu = {256: 16, 512: 8, 1024: 4}
 # Utility scripts.
 # To run, uncomment the appropriate line and launch train.py.
 
-#train = EasyDict(func='util_scripts.generate_fake_images', run_id=23, num_pngs=1000); num_gpus = 1; desc = 'fake-images-' + str(train.run_id)
+#train = EasyDict(func='util_scripts.generate_fake_images', run_id="/home/data/results_128/repelling_regularizer_resnetDG/000-pgan-celebahq-preset-v2-1gpu-fp32/", num_pngs=1000); num_gpus = 1; desc = 'fake-images-' + str(train.run_id)
 #train = EasyDict(func='util_scripts.generate_fake_images', run_id=23, grid_size=[15,8], num_pngs=10, image_shrink=4); num_gpus = 1; desc = 'fake-grids-' + str(train.run_id)
-#train = EasyDict(func='util_scripts.generate_interpolation_video', run_id=23, grid_size=[1,1], duration_sec=60.0, smoothing_sec=1.0); num_gpus = 1; desc = 'interpolation-video-' + str(train.run_id)
-#train = EasyDict(func='util_scripts.generate_training_video', run_id=23, duration_sec=20.0); num_gpus = 1; desc = 'training-video-' + str(train.run_id)
+train = EasyDict(func='util_scripts.generate_interpolation_video', run_id="/home/data/results_128/repelling_regularizer_resnetDG/008-pgan-celebahq-preset-v2-1gpu-fp32/", grid_size=[1,1], duration_sec=30.0, smoothing_sec=1.0); num_gpus = 1; desc = 'interpolation-video-' + str(train.run_id)
+#train = EasyDict(func='util_scripts.generate_training_video', run_id="/home/data/results_128/repelling_regularizer_resnetDG/008-pgan-celebahq-preset-v2-1gpu-fp32", duration_sec=20.0); num_gpus = 1; desc = 'training-video-' + str(train.run_id)
 
-#train = EasyDict(func='util_scripts.evaluate_metrics', run_id="/home/data/results_128/conv2/002-pgan-celebahq-preset-v2-1gpu-fp32/", log="metric-swd.log", metrics=['swd','fid','is','msssim'], num_images=16384, real_passes=2); num_gpus = 1; desc = train.log.split('.')[0] + '-' + str(train.run_id)
+#train = EasyDict(func='util_scripts.evaluate_metrics', run_id="/home/data/results_128/repelling_regularizer_resnetDG/000-pgan-celebahq-preset-v2-1gpu-fp32/", log="metric-swd.log", metrics=['swd','fid','is','msssim'], num_images=16384, real_passes=2); num_gpus = 1; desc = train.log.split('.')[0] + '-' + str(train.run_id)
 #train = EasyDict(func='util_scripts.evaluate_metrics', run_id=23, log='metric-fid-10k.txt', metrics=['fid'], num_images=10000, real_passes=1); num_gpus = 1; desc = train.log.split('.')[0] + '-' + str(train.run_id)
 #train = EasyDict(func='util_scripts.evaluate_metrics', run_id=23, log='metric-fid-50k.txt', metrics=['fid'], num_images=50000, real_passes=1); num_gpus = 1; desc = train.log.split('.')[0] + '-' + str(train.run_id)
 #train = EasyDict(func='util_scripts.evaluate_metrics', run_id=23, log='metric-is-50k.txt', metrics=['is'], num_images=50000, real_passes=1); num_gpus = 1; desc = train.log.split('.')[0] + '-' + str(train.run_id)
