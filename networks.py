@@ -125,18 +125,31 @@ def pixel_norm(x, epsilon=1e-8):
 # Minibatch standard deviation.
 
 def minibatch_stddev_layer(x, group_size=4):
+    #adding third and fourth standardized moments to encourage different minibatch distributions
     with tf.variable_scope('MinibatchStddev'):
-        group_size = tf.minimum(group_size, tf.shape(x)[0])     # Minibatch must be divisible by (or smaller than) group_size.
-        s = x.shape                                             # [NCHW]  Input shape.
-        y = tf.reshape(x, [group_size, -1, s[1], s[2], s[3]])   # [GMCHW] Split minibatch into M groups of size G.
+        group_size = tf.minimum(group_size, tf.shape(x)[0])    
+        s = x.shape                                            
+        y = tf.reshape(x, [group_size, -1, s[1], s[2], s[3]])   
         y = tf.cast(y, tf.float32)        
-        y -= tf.reduce_mean(y, axis=0, keepdims=True)           # [GMCHW] Subtract mean over group.
-        y = tf.reduce_mean(tf.square(y), axis=0)                # [MCHW]  Calc variance over group.
-        y = tf.sqrt(y + 1e-8)                                   # [MCHW]  Calc stddev over group.
-        y = tf.reduce_mean(y, axis=[1,2,3], keepdims=True)      # [M111]  Take average over fmaps and pixels.
-        y = tf.cast(y, x.dtype)                                 # [M111]  Cast back to original data type.
-        y = tf.tile(y, [group_size, 1, s[2], s[3]])             # [N1HW]  Replicate over group and pixels.
-        return tf.concat([x, y], axis=1)                        # [NCHW]  Append as new fmap.
+        y -= tf.reduce_mean(y, axis=0, keepdims=True)          
+        y = tf.reduce_mean(tf.square(y), axis=0)     
+        mu = tf.reduce_mean(y, axis=0)
+        skewness = tf.pow(mu, tf.constant(3.0))/tf.pow(y, tf.constant(3.0))
+        kurtosis = tf.square(tf.square(mu))/tf.square(y)
+        skewness = tf.reduce_mean(skewness, axis=[1,2,3], keepdims=True)
+        kurtosis = tf.reduce_mean(kurtosis, axis=[1,2,3], keepdims=True) 
+        y = tf.sqrt(y + 1e-8)
+        y = tf.reduce_mean(y, axis=[1,2,3], keepdims=True)
+        y = tf.cast(y, x.dtype)                             
+        y = tf.tile(y, [group_size, 1, s[2], s[3]])             
+        kurtosis = tf.cast(kurtosis, x.dtype)
+        kurtosis = tf.tile(kurtosis, [group_size, 1, s[2], s[3]])
+        skewness = tf.cast(skewness, x.dtype)
+        skewness = tf.tile(skewness, [group_size, 1, s[2], s[3]])
+        ret_tensor = tf.concat([x, y], axis=1)     
+        ret_tensor = tf.concat([ret_tensor, kurtosis], axis=1)
+        ret_tensor = tf.concat([ret_tensor, skewness], axis=1)
+        return ret_tensor                   
 
 #----------------------------------------------------------------------------
 # Generator network used in the paper.
